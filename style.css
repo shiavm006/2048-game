@@ -65,3 +65,45 @@ body {
   .score-title, #restart-button {
     font-size: 16px;
   }
+  .instructions {
+    background-color: #faf8ef;
+    padding: 10px 20px;
+    margin: 10px auto;
+    max-width: 300px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  
+  .instructions h3 {
+    margin-bottom: 5px;
+    font-size: 16px;
+  }
+  
+  .instructions ul {
+    padding-left: 20px;
+  }
+  
+  .instructions li {
+    margin-bottom: 5px;
+  }
+  /* Responsive font sizes for small screens */
+  @media (max-width: 400px) {
+    .score-container,
+    #restart-button {
+      font-size: 12px;
+      padding: 8px;
+    }
+  
+    #score {
+      font-size: 20px;
+    }
+  
+    .instructions {
+      font-size: 12px;
+    }
+  
+    #result {
+      font-size: 12px;
+    }
+  }
