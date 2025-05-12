@@ -1,271 +1,442 @@
-const gridDisplay = document.querySelector('.grid')
-  const scoreDisplay = document.getElementById('score')
-  const resultDisplay = document.getElementById('result')
-  let squares = []
-  const width = 4
-  let score = 0
+class Game2048 {
+    constructor() {
+        this.gridDisplay = document.querySelector('.grid');
+        this.scoreDisplay = document.getElementById('score');
+        this.bestScoreDisplay = document.getElementById('best-score');
+        this.resultDisplay = document.getElementById('result');
+        this.restartButton = document.getElementById('restart-button');
+        this.undoButton = document.getElementById('undo-button');
+        this.squares = [];
+        this.width = 4;
+        this.score = 0;
+        this.bestScore = parseInt(localStorage.getItem('bestScore')) || 0;
+        this.gameOver = false;
+        this.moveHistory = [];
+        this.maxUndoSteps = 5;
 
-
-function createBoard() {
-  for (let i = 0; i < 16; i++) {
-    let square = document.createElement('div');
-    square.innerHTML = 0;
-    gridDisplay.appendChild(square);
-    squares.push(square);
-  }
-  generate(); 
-  generate();
-}
-createBoard();
-
-function generate() {
-  let emptySquares = squares.filter(square => square.innerHTML == '0');
-  if (emptySquares.length > 0) {
-    let randomSquare = emptySquares[Math.floor(Math.random() * emptySquares.length)];
-    randomSquare.innerHTML = Math.random() < 0.9 ? '2' : '4';
-  }
-checkForGameOver()
-}
-
-  function shiftRight() {
-    for (let i=0; i < 16; i++) {
-      if (i % 4 === 0) {
-        let totalOne = squares[i].innerHTML
-        let totalTwo = squares[i+1].innerHTML
-        let totalThree = squares[i+2].innerHTML
-        let totalFour = squares[i+3].innerHTML
-        let row = [parseInt(totalOne), parseInt(totalTwo), parseInt(totalThree), parseInt(totalFour)]
-
-        let filteredRow = row.filter(num => num)
-        let missing = 4 - filteredRow.length
-        let zeros = Array(missing).fill(0)
-        let newRow = zeros.concat(filteredRow)
-
-        squares[i].innerHTML = newRow[0]
-        squares[i +1].innerHTML = newRow[1]
-        squares[i +2].innerHTML = newRow[2]
-        squares[i +3].innerHTML = newRow[3]
-      }
+        this.init();
+        this.loadBestScore();
     }
-  }
 
-  function shiftLeft() {
-    for (let i=0; i < 16; i++) {
-      if (i % 4 === 0) {
-        let totalOne = squares[i].innerHTML
-        let totalTwo = squares[i+1].innerHTML
-        let totalThree = squares[i+2].innerHTML
-        let totalFour = squares[i+3].innerHTML
-        let row = [parseInt(totalOne), parseInt(totalTwo), parseInt(totalThree), parseInt(totalFour)]
-
-        let filteredRow = row.filter(num => num)
-        let missing = 4 - filteredRow.length
-        let zeros = Array(missing).fill(0)
-        let newRow = filteredRow.concat(zeros)
-
-        squares[i].innerHTML = newRow[0]
-        squares[i +1].innerHTML = newRow[1]
-        squares[i +2].innerHTML = newRow[2]
-        squares[i +3].innerHTML = newRow[3]
-      }
+    init() {
+        this.createBoard();
+        this.addEventListeners();
     }
-  }
 
-
-  function shiftUp() {
-    for (let i=0; i < 4; i++) {
-      let totalOne = squares[i].innerHTML
-      let totalTwo = squares[i+width].innerHTML
-      let totalThree = squares[i+(width*2)].innerHTML
-      let totalFour = squares[i+(width*3)].innerHTML
-      let column = [parseInt(totalOne), parseInt(totalTwo), parseInt(totalThree), parseInt(totalFour)]
-
-      let filteredColumn = column.filter(num => num)
-      let missing = 4 - filteredColumn.length
-      let zeros = Array(missing).fill(0)
-      let newColumn = filteredColumn.concat(zeros)
-
-      squares[i].innerHTML = newColumn[0]
-      squares[i +width].innerHTML = newColumn[1]
-      squares[i+(width*2)].innerHTML = newColumn[2]
-      squares[i+(width*3)].innerHTML = newColumn[3]
+    loadBestScore() {
+        this.bestScoreDisplay.innerHTML = this.bestScore;
     }
-  }
 
-
- function shiftDown() {
-    for (let i=0; i < 4; i++) {
-      let totalOne = squares[i].innerHTML
-      let totalTwo = squares[i+width].innerHTML
-      let totalThree = squares[i+(width*2)].innerHTML
-      let totalFour = squares[i+(width*3)].innerHTML
-      let column = [parseInt(totalOne), parseInt(totalTwo), parseInt(totalThree), parseInt(totalFour)]
-
-      let filteredColumn = column.filter(num => num)
-      let missing = 4 - filteredColumn.length
-      let zeros = Array(missing).fill(0)
-      let newColumn = zeros.concat(filteredColumn)
-
-      squares[i].innerHTML = newColumn[0]
-      squares[i +width].innerHTML = newColumn[1]
-      squares[i+(width*2)].innerHTML = newColumn[2]
-      squares[i+(width*3)].innerHTML = newColumn[3]
-    }
-  }
-
-
-function combineRow() {
-  for (let i = 0; i < 15; i++) {
-    if (i % 4 !== 3 && squares[i].innerHTML === squares[i + 1].innerHTML && squares[i].innerHTML !== '0') {
-      let combinedTotal = parseInt(squares[i].innerHTML) * 2;
-      squares[i].innerHTML = combinedTotal;
-      squares[i + 1].innerHTML = 0;
-      score += combinedTotal;
-      scoreDisplay.innerHTML = score;
-    }
-  }
-    checkForWin();
-}
-
-
-function combineColumn() {
-  for (let i = 0; i < 4; i++) { 
-    for (let j = 0; j < 12; j += 4) { 
-      if (squares[j + i].innerHTML === squares[j + i + 4].innerHTML && squares[j + i].innerHTML !== '0') {
-        let combinedTotal = parseInt(squares[j + i].innerHTML) * 2;
-        squares[j + i].innerHTML = combinedTotal; 
-        squares[j + i + 4].innerHTML = '0'; 
-        score += combinedTotal; 
-        scoreDisplay.innerHTML = score;
-      }
-    }
-  }
-    checkForWin();
-}
-
-
-function checkForGameOver() {
-  let noMovesLeft = true;
-  for (let i = 0; i < squares.length; i++) {
-    if (squares[i].innerHTML === '0') {
-      noMovesLeft = false; 
-      break;
-    }
-  }
-
-  if (noMovesLeft) {
-    for (let i = 0; i < squares.length; i++) {
-      const current = parseInt(squares[i].innerHTML);
-      const row = Math.floor(i / width);
-      const col = i % width;
-
-
-      if (col < width - 1) { 
-        const right = parseInt(squares[i + 1].innerHTML);
-        if (current === right) {
-          noMovesLeft = false;
-          break;
+    updateBestScore() {
+        if (this.score > this.bestScore) {
+            this.bestScore = this.score;
+            this.bestScoreDisplay.innerHTML = this.bestScore;
+            localStorage.setItem('bestScore', this.bestScore);
         }
-      }
-
-
-      if (row < width - 1) { 
-        const down = parseInt(squares[i + width].innerHTML);
-        if (current === down) {
-          noMovesLeft = false;
-          break;
-        }
-      }
-
-
-      if (col > 0) { 
-        const left = parseInt(squares[i - 1].innerHTML);
-        if (current === left) {
-          noMovesLeft = false;
-          break;
-        }
-      }
-
-
-      if (row > 0) { 
-        const up = parseInt(squares[i - width].innerHTML);
-        if (current === up) {
-          noMovesLeft = false;
-          break;
-        }
-      }
     }
-  }
 
-  if (noMovesLeft) {
-    resultDisplay.innerHTML = 'Game Over!';
-    document.removeEventListener('keyup', control);
-  }
+    createBoard() {
+        this.squares = [];
+        this.gridDisplay.innerHTML = '';
+        this.score = 0;
+        this.scoreDisplay.innerHTML = '0';
+        this.gameOver = false;
+        this.moveHistory = [];
+        this.resultDisplay.innerHTML = '';
+        this.undoButton.disabled = true;
+
+        for (let i = 0; i < 16; i++) {
+            const square = document.createElement('div');
+            square.innerHTML = '0';
+            this.gridDisplay.appendChild(square);
+            this.squares.push(square);
+        }
+        this.generate();
+        this.generate();
+        this.updateTileColors();
+    }
+
+    saveGameState() {
+        if (this.moveHistory.length >= this.maxUndoSteps) {
+            this.moveHistory.shift();
+        }
+        
+        const state = {
+            squares: this.squares.map(square => square.innerHTML),
+            score: this.score
+        };
+        
+        this.moveHistory.push(state);
+        this.undoButton.disabled = false;
+    }
+
+    undo() {
+        if (this.moveHistory.length === 0) return;
+        
+        const previousState = this.moveHistory.pop();
+        this.score = previousState.score;
+        this.scoreDisplay.innerHTML = this.score;
+        
+        previousState.squares.forEach((value, index) => {
+            this.squares[index].innerHTML = value;
+        });
+        
+        this.updateTileColors();
+        if (this.moveHistory.length === 0) {
+            this.undoButton.disabled = true;
+        }
+        
+        this.gameOver = false;
+        this.resultDisplay.innerHTML = '';
+    }
+
+    addEventListeners() {
+        document.addEventListener('keyup', this.control.bind(this));
+        this.restartButton.addEventListener('click', () => this.createBoard());
+        this.undoButton.addEventListener('click', () => this.undo());
+        
+        // Add touch support with minimum swipe distance
+        let touchStartX, touchStartY;
+        const minSwipeDistance = 50;
+
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, false);
+
+        document.addEventListener('touchend', (e) => {
+            if (!touchStartX || !touchStartY) return;
+
+            let touchEndX = e.changedTouches[0].clientX;
+            let touchEndY = e.changedTouches[0].clientY;
+
+            let deltaX = touchEndX - touchStartX;
+            let deltaY = touchEndY - touchStartY;
+
+            // Only register as a swipe if the distance is greater than minimum
+            if (Math.abs(deltaX) > minSwipeDistance || Math.abs(deltaY) > minSwipeDistance) {
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    if (deltaX > 0) this.keyRight();
+                    else this.keyLeft();
+                } else {
+                    if (deltaY > 0) this.keyDown();
+                    else this.keyUp();
+                }
+            }
+
+            touchStartX = null;
+            touchStartY = null;
+        }, false);
+    }
+
+    showScoreAddition(value) {
+        const scoreAddition = document.createElement('div');
+        scoreAddition.className = 'score-addition';
+        scoreAddition.textContent = '+' + value;
+        document.querySelector('.current-score').appendChild(scoreAddition);
+        
+        setTimeout(() => {
+            scoreAddition.remove();
+        }, 600);
+    }
+
+    generate() {
+        if (this.gameOver) return;
+
+        const emptySquares = this.squares.filter(square => square.innerHTML === '0');
+        if (emptySquares.length > 0) {
+            const randomSquare = emptySquares[Math.floor(Math.random() * emptySquares.length)];
+            const value = Math.random() < 0.9 ? '2' : '4';
+            randomSquare.innerHTML = value;
+            randomSquare.classList.add('new-tile');
+            
+            setTimeout(() => {
+                randomSquare.classList.remove('new-tile');
+            }, 300);
+
+            this.updateTileColors();
+            this.checkForGameOver();
+        }
+    }
+
+    updateTileColors() {
+        this.squares.forEach(square => {
+            const value = square.innerHTML;
+            square.removeAttribute('data-value');
+            if (value !== '0') {
+                square.setAttribute('data-value', value);
+            }
+        });
+    }
+
+    moveRight() {
+        let moved = false;
+        for (let i = 0; i < 16; i += 4) {
+            const row = [
+                parseInt(this.squares[i].innerHTML),
+                parseInt(this.squares[i + 1].innerHTML),
+                parseInt(this.squares[i + 2].innerHTML),
+                parseInt(this.squares[i + 3].innerHTML)
+            ];
+            const originalRow = [...row];
+            const filteredRow = row.filter(num => num);
+            const missing = 4 - filteredRow.length;
+            const zeros = Array(missing).fill(0);
+            const newRow = zeros.concat(filteredRow);
+
+            for (let j = 0; j < 4; j++) {
+                this.squares[i + j].innerHTML = newRow[j];
+            }
+            
+            if (!moved && JSON.stringify(originalRow) !== JSON.stringify(newRow)) {
+                moved = true;
+            }
+        }
+        return moved;
+    }
+
+    moveLeft() {
+        let moved = false;
+        for (let i = 0; i < 16; i += 4) {
+            const row = [
+                parseInt(this.squares[i].innerHTML),
+                parseInt(this.squares[i + 1].innerHTML),
+                parseInt(this.squares[i + 2].innerHTML),
+                parseInt(this.squares[i + 3].innerHTML)
+            ];
+            const originalRow = [...row];
+            const filteredRow = row.filter(num => num);
+            const missing = 4 - filteredRow.length;
+            const zeros = Array(missing).fill(0);
+            const newRow = filteredRow.concat(zeros);
+
+            for (let j = 0; j < 4; j++) {
+                this.squares[i + j].innerHTML = newRow[j];
+            }
+            
+            if (!moved && JSON.stringify(originalRow) !== JSON.stringify(newRow)) {
+                moved = true;
+            }
+        }
+        return moved;
+    }
+
+    moveUp() {
+        let moved = false;
+        for (let i = 0; i < 4; i++) {
+            const column = [
+                parseInt(this.squares[i].innerHTML),
+                parseInt(this.squares[i + this.width].innerHTML),
+                parseInt(this.squares[i + (this.width * 2)].innerHTML),
+                parseInt(this.squares[i + (this.width * 3)].innerHTML)
+            ];
+            const originalColumn = [...column];
+            const filteredColumn = column.filter(num => num);
+            const missing = 4 - filteredColumn.length;
+            const zeros = Array(missing).fill(0);
+            const newColumn = filteredColumn.concat(zeros);
+
+            for (let j = 0; j < 4; j++) {
+                this.squares[i + (j * this.width)].innerHTML = newColumn[j];
+            }
+            
+            if (!moved && JSON.stringify(originalColumn) !== JSON.stringify(newColumn)) {
+                moved = true;
+            }
+        }
+        return moved;
+    }
+
+    moveDown() {
+        let moved = false;
+        for (let i = 0; i < 4; i++) {
+            const column = [
+                parseInt(this.squares[i].innerHTML),
+                parseInt(this.squares[i + this.width].innerHTML),
+                parseInt(this.squares[i + (this.width * 2)].innerHTML),
+                parseInt(this.squares[i + (this.width * 3)].innerHTML)
+            ];
+            const originalColumn = [...column];
+            const filteredColumn = column.filter(num => num);
+            const missing = 4 - filteredColumn.length;
+            const zeros = Array(missing).fill(0);
+            const newColumn = zeros.concat(filteredColumn);
+
+            for (let j = 0; j < 4; j++) {
+                this.squares[i + (j * this.width)].innerHTML = newColumn[j];
+            }
+            
+            if (!moved && JSON.stringify(originalColumn) !== JSON.stringify(newColumn)) {
+                moved = true;
+            }
+        }
+        return moved;
+    }
+
+    combineRow() {
+        let combined = false;
+        for (let i = 0; i < 15; i++) {
+            if (i % 4 !== 3) {
+                const currentValue = parseInt(this.squares[i].innerHTML);
+                const nextValue = parseInt(this.squares[i + 1].innerHTML);
+                if (currentValue !== 0 && currentValue === nextValue) {
+                    const combinedTotal = currentValue * 2;
+                    this.squares[i].innerHTML = combinedTotal;
+                    this.squares[i + 1].innerHTML = 0;
+                    this.score += combinedTotal;
+                    this.scoreDisplay.innerHTML = this.score;
+                    this.showScoreAddition(combinedTotal);
+                    this.updateBestScore();
+                    this.squares[i].classList.add('merge');
+                    setTimeout(() => {
+                        this.squares[i].classList.remove('merge');
+                    }, 300);
+                    combined = true;
+                }
+            }
+        }
+        return combined;
+    }
+
+    combineColumn() {
+        let combined = false;
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 12; j += 4) {
+                const currentValue = parseInt(this.squares[j + i].innerHTML);
+                const nextValue = parseInt(this.squares[j + i + 4].innerHTML);
+                if (currentValue !== 0 && currentValue === nextValue) {
+                    const combinedTotal = currentValue * 2;
+                    this.squares[j + i].innerHTML = combinedTotal;
+                    this.squares[j + i + 4].innerHTML = 0;
+                    this.score += combinedTotal;
+                    this.scoreDisplay.innerHTML = this.score;
+                    this.showScoreAddition(combinedTotal);
+                    this.updateBestScore();
+                    this.squares[j + i].classList.add('merge');
+                    setTimeout(() => {
+                        this.squares[j + i].classList.remove('merge');
+                    }, 300);
+                    combined = true;
+                }
+            }
+        }
+        return combined;
+    }
+
+    control(e) {
+        if (this.gameOver) return;
+
+        let handled = false;
+        switch(e.keyCode) {
+            case 37: // Left arrow
+                e.preventDefault();
+                handled = true;
+                this.keyLeft();
+                break;
+            case 38: // Up arrow
+                e.preventDefault();
+                handled = true;
+                this.keyUp();
+                break;
+            case 39: // Right arrow
+                e.preventDefault();
+                handled = true;
+                this.keyRight();
+                break;
+            case 40: // Down arrow
+                e.preventDefault();
+                handled = true;
+                this.keyDown();
+                break;
+            case 85: // 'U' key for undo
+                e.preventDefault();
+                handled = true;
+                this.undo();
+                break;
+        }
+
+        if (handled) {
+            e.preventDefault();
+        }
+    }
+
+    makeMove(moveFunction, combineFunction) {
+        this.saveGameState();
+        let moved = moveFunction.call(this);
+        let combined = combineFunction.call(this);
+        if (combined) {
+            moveFunction.call(this);
+        }
+        if (moved || combined) {
+            this.generate();
+        }
+        this.updateTileColors();
+    }
+
+    keyRight() {
+        this.makeMove(this.moveRight, this.combineRow);
+    }
+
+    keyLeft() {
+        this.makeMove(this.moveLeft, this.combineRow);
+    }
+
+    keyUp() {
+        this.makeMove(this.moveUp, this.combineColumn);
+    }
+
+    keyDown() {
+        this.makeMove(this.moveDown, this.combineColumn);
+    }
+
+    checkForWin() {
+        for (let square of this.squares) {
+            if (square.innerHTML === '2048') {
+                this.resultDisplay.innerHTML = 'You Win! 🎉 Keep playing to get a higher score!';
+                return;
+            }
+        }
+    }
+
+    checkForGameOver() {
+        let hasEmptySquare = false;
+        let hasPossibleMoves = false;
+
+        // Check for empty squares
+        for (let i = 0; i < this.squares.length; i++) {
+            if (this.squares[i].innerHTML === '0') {
+                hasEmptySquare = true;
+                break;
+            }
+        }
+
+        // Check for possible moves
+        if (!hasEmptySquare) {
+            for (let i = 0; i < this.squares.length; i++) {
+                const current = parseInt(this.squares[i].innerHTML);
+                const row = Math.floor(i / this.width);
+                const col = i % this.width;
+
+                // Check right
+                if (col < this.width - 1) {
+                    const right = parseInt(this.squares[i + 1].innerHTML);
+                    if (current === right) hasPossibleMoves = true;
+                }
+
+                // Check down
+                if (row < this.width - 1) {
+                    const down = parseInt(this.squares[i + this.width].innerHTML);
+                    if (current === down) hasPossibleMoves = true;
+                }
+            }
+
+            if (!hasPossibleMoves) {
+                this.resultDisplay.innerHTML = `Game Over! 😔 Final Score: ${this.score}`;
+                this.gameOver = true;
+            }
+        }
+    }
 }
 
-
-  function control(e) {
-    if(e.keyCode === 37) {
-      keyLeft()
-    } else if (e.keyCode === 38) {
-      keyUp()
-    } else if (e.keyCode === 39) {
-      keyRight()
-    } else if (e.keyCode === 40) {
-      keyDown()
-    }
-  }
-   document.addEventListener('keyup', control);
-
-  function keyRight() {
-    shiftRight()
-    combineRow()
-    shiftRight()
-    generate()
-  }
-
-  function keyLeft() {
-    shiftLeft()
-    combineRow()
-    shiftLeft()
-    generate()
-  }
-
-  function keyUp() {
-    shiftUp()
-    combineColumn()
-    shiftUp()
-    generate()
-  }
-
-  function keyDown() {
-    shiftDown()
-    combineColumn()
-    shiftDown()
-    generate()
-  }
-
-
-function checkForWin() {
-  for (let i = 0; i < squares.length; i++) {
-    if (squares[i].innerHTML == 2048) {
-      resultDisplay.innerHTML = 'YOU WIN';
-      document.removeEventListener('keyup', control);
-      break;
-    }
-  }
-}
-
-
-function restartGame() {
-  gridDisplay.innerHTML = '';
-  squares = [];
-  score = 0;
-  scoreDisplay.innerHTML = score;
-  resultDisplay.innerHTML = 'Join the numbers and get to the 2048 tile!';
-  createBoard();
-  document.addEventListener('keyup', control);
-}
-
-const restartButton = document.getElementById('restart-button');
-restartButton.addEventListener('click', restartGame);
+// Start the game
+const game = new Game2048();
